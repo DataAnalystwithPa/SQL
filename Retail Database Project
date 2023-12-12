@@ -1,0 +1,223 @@
+-- Create the retailDatabase database
+CREATE DATABASE StoreDatabase;
+
+use StoreDatabase; 
+-- Create the category table
+CREATE TABLE category (
+    categoryID INT NOT NULL,
+    categoryName VARCHAR(255) NOT NULL,
+    PRIMARY KEY (categoryID)
+);
+
+-- Create the product table
+CREATE TABLE product (
+    productID INT NOT NULL AUTO_INCREMENT,
+    productName VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    Quantity INT NOT NULL,
+    categoryID INT NOT NULL,
+    PRIMARY KEY (productID),
+    FOREIGN KEY (categoryID) REFERENCES category(categoryID)
+);
+
+-- create Product Brand table
+CREATE Table ProductBrand (
+	brandID int not null auto_increment, 
+    brandName varchar(255), 
+    productID int,
+    primary key (brandID), 
+    foreign key(productID) references product(productID)
+);  
+
+-- Create Customer table 
+CREATE TABLE customer(
+	customerID INT NOT NULL AUTO_INCREMENT, 
+    FirstName VARCHAR(255) NOT NULL, 
+    LastName VARCHAR(255) NOT NULL, 
+    phone VARCHAR (20) NOT NULL, 
+    address VARCHAR (255), 
+    PRIMARY KEY (customerID)
+);
+
+-- Create the tranOrder table
+CREATE TABLE tranOrder (
+    transID INT NOT NULL AUTO_INCREMENT,
+    productID INT,
+    customerID INT ,
+    quantitySold INT NOT NULL,
+    totalPrice DECIMAL(10, 2) NOT NULL,
+    orderDate DATE, -- Assuming orderDate is a date field
+    categoryName VARCHAR(255),
+    PRIMARY KEY (transID),
+    FOREIGN KEY (productID) REFERENCES product(productID),
+    FOREIGN KEY (customerID) REFERENCES customer(customerID) -- Create the customer table first
+);
+
+
+
+-- create Restock table 
+CREATE TABLE restock (
+	restockID INT NOT NULL auto_increment, 
+    productID INT , 
+    quantity INT, 
+    restockDate DATE, 
+    PRIMARY KEY(restockID), 
+    FOREIGN KEY(productID) REFERENCES product(productID)
+); 
+
+-- create Promotions table 
+CREATE TABLE promotions (
+	promotionID INT NOT NULL AUTO_INCREMENT, 
+    productID int, 
+    categoryID int, 
+    dateStart date, 
+    dateEnd date, 
+    primary key(PromotionID), 
+    foreign key(productID) references product(productID), 
+    foreign key(categoryID) references category(categoryID)
+); 
+use StoreDatabase; 
+
+-- Insert data into the category table
+INSERT INTO category (categoryID, categoryName) VALUES
+(1, 'Electronics'),
+(2, 'Clothing'),
+(3, 'Home and Garden'),
+(4, 'Books'), 
+(5, 'Toys');
+
+-- Insert data into the product table
+INSERT INTO product (productName, price, Quantity, categoryID) VALUES
+('Smartphone', 599.99, 50, 1),
+('Laptop', 999.99, 30, 1),
+('T-shirt', 19.99, 100, 2),
+('Coffee Maker', 49.99, 20, 3),
+('Novel', 9.99, 200, 4);
+
+-- Insert data into the ProductBrand table
+INSERT INTO ProductBrand (brandName, productID) VALUES
+('Apple', 1),
+('Dell', 2),
+('Nike', 3),
+('Philips', 4),
+('Penguin', 5);
+
+-- Insert data into the customer table
+INSERT INTO customer (FirstName, LastName, phone, address) VALUES
+('John', 'Doe', '123-456-7890', '123 Main St'),
+('Jane', 'Smith', '987-654-3210', '456 Elm St'),
+('Alice', 'Johnson', '555-123-4567', '789 Oak St'),
+('Bob', 'Williams', '111-222-3333', '321 Pine St'),
+('Eve', 'Brown', '444-555-6666', '654 Cedar St');
+
+select * from customer
+
+-- Insert data into the tranOrder table
+INSERT INTO tranOrder (productID, customerID, quantitySold, totalPrice, orderDate) VALUES
+(1, 1, 2, 1199.98, '2023-01-15'),
+(3, 2, 3, 59.97, '2023-02-05'),
+(4, 3, 1, 49.99, '2023-02-20'),
+(2, 4, 2, 1999.98, '2023-03-10'),
+(5, 5, 5, 49.95, '2023-03-15');
+
+
+
+-- Insert data into the restock table
+INSERT INTO restock (productID, quantity, restockDate) VALUES
+(1, 10, '2023-02-01'),
+(2, 5, '2023-02-15'),
+(3, 15, '2023-03-01'),
+(4, 8, '2023-03-15'),
+(5, 10, '2023-04-01');
+
+
+-- Insert data into the promotions table
+INSERT INTO promotions (productID, categoryID, dateStart, dateEnd) VALUES
+(1, 1, '2023-01-01', '2023-01-31'),
+(2, 2, '2023-02-01', '2023-02-28'),
+(3, 1, '2023-03-01', '2023-03-31'),
+(4, 3, '2023-04-01', '2023-04-30'),
+(5, 4, '2023-05-01', '2023-05-31');
+
+-- count number of customers 
+SELECT COUNT(*) FROM customer;
+
+-- list products by category 
+SELECT p.productName, c.categoryName
+FROM product p
+JOIN category c ON p.categoryID = c.categoryID;
+
+-- calculate total sales for each product 
+SELECT p.productName, SUM(t.totalPrice) AS totalSales
+FROM tranOrder t
+JOIN product p ON t.productID = p.productID
+GROUP BY p.productName;
+
+-- find top selling product 
+SELECT p.productName, SUM(t.quantitySold) AS totalQuantity
+FROM tranOrder t
+JOIN product p ON t.productID = p.productID
+GROUP BY p.productName
+ORDER BY totalQuantity DESC
+LIMIT 1;
+
+-- list customers and their total spending 
+SELECT c.FirstName, c.LastName, SUM(t.totalPrice) AS totalSpent
+FROM customer c
+JOIN tranOrder t ON c.customerID = t.customerID
+GROUP BY c.FirstName, c.LastName
+ORDER BY totalSpent DESC;
+
+-- find products in need of restocking 
+SELECT p.productName, r.quantity
+FROM product p
+JOIN restock r ON p.productID = r.productID
+WHERE r.quantity < 10;
+
+-- retrieve details of ongoing promotions including prodcuts and categories 
+SELECT p.productName, c.categoryName, pr.dateStart, pr.dateEnd
+FROM promotions pr
+JOIN product p ON pr.productID = p.productID
+JOIN category c ON pr.categoryID = c.categoryID;
+
+-- list products grouped by category with their avg price 
+SELECT c.categoryName, AVG(p.price) AS averagePrice
+FROM product p
+JOIN category c ON p.categoryID = c.categoryID
+GROUP BY c.categoryName;
+
+-- retrieve customer contact info for a specific last name 
+SELECT FirstName, LastName, phone, address
+FROM customer
+WHERE LastName = 'Johnson';
+
+-- list top 3 categories with highest total sales in March 
+SELECT c.categoryName, SUM(t.totalPrice) AS totalSales
+FROM category c
+JOIN product p ON c.categoryID = p.categoryID
+JOIN tranOrder t ON p.productID = t.productID
+WHERE MONTH(t.orderDate) = 3
+GROUP BY c.categoryName
+ORDER BY totalSales DESC
+LIMIT 3;
+
+-- views of restockNeeds 
+CREATE VIEW RestockNeeds AS
+SELECT
+    p.productName,
+    p.Quantity AS initialQuantity,
+    IFNULL(SUM(t.quantitySold), 0) AS totalSold,
+    IFNULL(SUM(r.quantity), 0) AS totalRestocked,
+    (p.Quantity + IFNULL(SUM(r.quantity), 0) - IFNULL(SUM(t.quantitySold), 0)) AS remainingQuantity
+FROM
+    product p
+LEFT JOIN
+    tranOrder t ON p.productID = t.productID
+LEFT JOIN
+    restock r ON p.productID = r.productID
+GROUP BY
+    p.productName, p.Quantity;
+
+SELECT * FROM RestockNeeds;
+
+
